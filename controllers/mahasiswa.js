@@ -1,89 +1,96 @@
-const connection = require('..//db/db')
+const Mahasiswa = require('../models/mhsEmbedded')
 
-module.exports ={
-    getMhs: (req, res) =>{
-
-        const qstring = "SELECT * FROM tutor"
-    
-        connection.query(qstring ,(err, data) => {
-            if (err) {
-                console.log("error:", err);
-                res.status(500).send({
-                    message : err.message || "Terjadi kesalahan saat insert get"
-                });
-            }
-                res.send(data)
-        });
+module.exports = {
+    insert: async (req, res) => {
+        const data = new Mahasiswa({
+            nim:req.body.nim,
+            nama:req.body.nama,
+            angkatan:req.body.angkatan,
+            prodi:req.body.prodi,
+        })
+        try {
+            const dataToSave = await data.save();
+            res.status(200).json(dataToSave)
+        } catch (error) {
+            res.status(400).json({ message: error.message })
+        }
     },
-    getMhsByNim : (req, res) =>{
 
-        const qstring = `SELECT * FROM tutor WHERE nim = '${req.params.nim}'`;
-    
-        connection.query(qstring ,(err, data) => {
-            if (err) {
-                console.log("error:", err);
-                res.status(500).send({
-                    message : err.message || "Terjadi kesalahan saat insert get"
-                });
-            }
-                res.send(data)
-        });
+    getMahasiswa: async (req, res) => {
+        try{
+            const data = await Mahasiswa.find();
+            res.json(data)
+        } catch (error){
+            res.status(500).json({ message: error.message})
+        }
     },
-    update: (req, res) => {
+
+    getMahasiswaByNim: async (req, res) => {
+        const nim = req.params.nim
+        try{
+            const data = await Mahasiswa.find().where('nim').equals(nim);
+            res.json(data)
+        } catch (error){
+            res.status(500).json({ message: error.message})
+        }
+    },
+    
+    insertNilai: async(req,res) => {
+        const nim = req.params.nim
+
+        try{
+            await Mahasiswa.updateOne(
+                {"nim":nim},
+                {
+                    $push: {
+                        "nilai": {
+                            "kdMk": req.body.kdMk,
+                            "matakuliah": req.body.matakuliah,
+                            "dosen": req.body.dosen,
+                            "semester": req.body.semester,
+                            "nilai": req.body.nilai
+                        }
+                    }
+                });
+            res.send('Nilai telah disimpan')
+        } catch (error){
+            res.status(409).json({ message: error.message })
+        }
+    },
+
+    getNilaiByNim: async (req, res) => {
         const nim = req.params.nim;
-        const bljr = req.body;
-        const qstring = `UPDATE tutor 
-                        SET nama = '${bljr.nama}', angkatan = '${bljr.angkatan}', prodi = '${bljr.prodi}'
-                        WHERE nim = '${nim}'`
-        connection.query(qstring, (err,data) => {
-            if(err) {
-                res.status(500).send({
-                    message: "ERROR updating belajar with NIM " + nim 
-                });
-            }
-            else if(data.affectedRows == 0){
-                res.status(404).send({
-                    message: `NOT found belajar with NIM ${nim}`
-                });
-            }
-            else {
-                console.log("update belajar: ", {nim: nim, ...bljr});
-                res.send({nim: nim, ...bljr})
-            }
-        });
+        try{
+            const result = await Mahasiswa.findOne({"nim":nim}, {"_id":0,"nilai":1})
+            res.json(result)
+        }catch (error) {
+            res.status(500).json({ message : error.message})
+        }
     },
-    create: (req, res) =>{
 
-        const belajardulu = req.body
-    
-        connection.query("INSERT INTO tutor set ?", belajardulu,(err) => {
-            if (err) {
-                console.log("error:", err);
-                res.status(500).send({
-                    message : err.message || "Terjadi kesalahan saat insert data"
-                });
-            }
-            else 
-                res.send(req.body)
-        });
+    update: async (req, res) => {
+        const filter = {nim: req.params.nim}
+        const updateData = {
+            nim : req.params.nim,
+            nama : req.body.nama,
+            angkatan : req.body.angkatan,
+            prodi: req.body.prodi,
+        }
+        try{
+            await Mahasiswa.updateOne(filter, updateData )
+            res.status(200).json(updateData)
+        } catch (error){
+            res.status(409).json({ message: error.message})
+        }
     },
-    delete: (req, res) =>{
-        const nim = req.params.nim;
-        const qstring = `DELETE FROM tutor WHERE nim = '${nim}'`
-    
-        connection.query(qstring ,(err, data) => {
-            if (err) {
-                console.log("error:", err);
-                res.status(500).send({
-                    message : err.message || "ERROR hapus tutor with nim ${nim}" + nim
-                });
-            }
-            else if(data.affectedRows ==0){
-                res.status(404).send({
-                    message: ` NOT found tutor with nim ${nim}`
-                })
-            }
-            else res.send(`belajar dengan nim = ${nim} telah terhapus`)
-        });
-    }
+
+    delete: async (req, res) => {
+        const filter = {nim: req.params.nim}
+        try{
+            await Mahasiswa.deleteOne(filter)
+            res.send("data telah terhapus")
+        } catch (error){
+            res.status(409).json({ message: error.message})
+        }
+    },
 }
