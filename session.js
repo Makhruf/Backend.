@@ -1,68 +1,89 @@
 const express = require('express');
-const session = require('express-session');
 const app = express();
-const port = 5000;
+const session = require('express-session')
+const mysql =  require('mysql2')
+const port = 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json())
+
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'mahasiswa'
+});
+connection.connect (error => {
+    if (error) throw error;
+    console.log("sukses masuk ke database")
+});
 
 app.use(session({
     secret: 'secret-key',
     resave: false,
-    saveUninitialized: false, 
+    saveUninitialized: false
 }));
 
 const authenticate = (req, res, next) => {
-    if (req?.session?.isAuthenticated) {
+    if (req?.session.isAuthenticated) {
         next();
     } else {
-        res.status(401).send('Tidak Terautentikasi');
+        res.status(401).send('tidak terautentikasi');
     }
 };
 
-// Route login
-app.post('/login', (req, res) => {
+app.post('/register', (req,res) => {
+    const { username,password } = req.body;
+    connection.query(`INSERT INTO user VALUES ('${username}',PASSWORD('${password}'))`,
+        (error, result) => {
+            if (error) throw error;
+            res.json({ message: 'data berhasil di tambahkan', id: result.insertId});
+    });
+});
+app.post('/login', (req,res) => {
     const { username, password } = req.body;
-    if (username === 'admin' && password === 'password') {
-        req.session.isAuthenticated = true;
-        res.send('Login sukses');
-    } else {
-        res.status(401).send('Kredensial Tidak Valid');
-    }
+
+    connection.promise().query(`SELECT * FROM user WHERE username ='${username}'
+                                AND password = PASSWORD('${password}')`)
+    .then((results) => {
+        if (results.length > 0) {
+            req.session.isAuthenticated = true;
+            res.json({ message: 'berhasil login' });
+        }else
+            res.status(401).send('username atau password salah');
+    })
 });
 
-// Route logout
-app.get('/logout', (req, res) => {
+app.get('/logout', (req,res) => {
     req.session.destroy((err) => {
         if (err) {
             console.log(err);
-            res.status(500).send('Error saat logout');
         } else {
-            res.send('Logout sukses');
+            res.send('logout');
         }
     });
 });
 
-// Protected GET route
-app.get('/protected', authenticate, (req, res) => {
-    res.send('Anda masuk pada route terproteksi (GET)');
+app.get ('/open', (req, res) => {
+    res.send('anda masuk pada route tidak terproteksi')
 });
 
-// Protected POST route
+app.get('/protected', authenticate, (req, res) => {
+    res.send('Anda masuk pada route terproteksi (GET)')
+});
+
 app.post('/protected', authenticate, (req, res) => {
     res.send('Route terproteksi (POST)');
 });
 
-// Protected PUT route
 app.put('/protected', authenticate, (req, res) => {
     res.send('Route terproteksi (PUT)');
 });
 
-// Protected DELETE route
 app.delete('/protected', authenticate, (req, res) => {
     res.send('Route terproteksi (DELETE)');
 });
 
 app.listen(port, () => {
-    console.log(`Servis berjalan pada port ${port}`);
+    console.log(`server berjalan pada localhost:${port}`)
 });
