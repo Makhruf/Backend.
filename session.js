@@ -2,10 +2,11 @@ const express = require('express');
 const app = express();
 const session = require('express-session')
 const mysql =  require('mysql2')
-const port = 3000;
+const port = 5000;
 
 
 app.use(express.json())
+// app.use(express.urlencoded({ extended: true }))
 
 const connection = mysql.createConnection({
     host: 'localhost',
@@ -52,6 +53,12 @@ app.post('/login', (req,res) => {
         }else
             res.status(401).send('username atau password salah');
     })
+    // if (username === 'admin' && password === 'password') {
+    //     req.session.isAuthenticated = true;
+    //     res.send('login sukses')
+    // } else {
+    //     res.status(401).send('Kredensial Tidak Valid');
+    // }
 });
 
 app.get('/logout', (req,res) => {
