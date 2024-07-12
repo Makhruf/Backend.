@@ -1,15 +1,14 @@
 const mysql = require("mysql2");
 
-
+// koneksi mysql
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
-    database:'belajar'
+    database:'mahasiswa'
 });
 connection.connect(error => {
     if (error) throw error;
-    console.log("sukses masuk didatabase.");
+    console.log("sukses ke database.");
 });
-
 module.exports = connection;
