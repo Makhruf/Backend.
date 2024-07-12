@@ -3,19 +3,19 @@ const mongoose = require('mongoose');
 const mahasiswaSchema = new mongoose.Schema({
     nim: {
         type: String,
-        required: true // This is the correct way to set 'required'
+        required: true 
     },
     nama: {
         type: String,
-        required: true // This is the correct way to set 'required'
+        required: true 
     },
     angkatan: {
         type: Number,
-        required: true // This is the correct way to set 'required'
+        required: true 
     },
     prodi: {
         type: String,
-        required: true // This is the correct way to set 'required'
+        required: true 
     },
 });
 
